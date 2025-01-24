@@ -148,38 +148,19 @@ app.post("/customers", authenticateToken, async (req, res) => {
 });
 
 // Get Customers
-app.get("/customers", authenticateToken, (req, res) => {
-  const { name, email, phone, company } = req.query;
-
-  let query = "SELECT * FROM customers WHERE user_id = ?";
-  let queryParams = [req.user.id];
-
-  // Add search filters dynamically
-  if (name) {
-    query += " AND name LIKE ?";
-    queryParams.push(`%${name}%`);
+app.get("/customers", authenticateToken, async (req, res) => {
+  try {
+    const [customers] = await db.query(
+      "SELECT * FROM customers WHERE user_id = ?",
+      [req.user.id]
+    );
+    res.json(customers);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Error retrieving customers");
   }
-  if (email) {
-    query += " AND email LIKE ?";
-    queryParams.push(`%${email}%`);
-  }
-  if (phone) {
-    query += " AND phone LIKE ?";
-    queryParams.push(`%${phone}%`);
-  }
-  if (company) {
-    query += " AND company LIKE ?";
-    queryParams.push(`%${company}%`);
-  }
-
-  db.query(query, queryParams, (err, result) => {
-    if (err) {
-      res.status(500).send("Error retrieving customers");
-    } else {
-      res.json(result);
-    }
-  });
 });
+
 // Update Customer
 app.put("/customers/:id", authenticateToken, async (req, res) => {
   const { id } = req.params;
